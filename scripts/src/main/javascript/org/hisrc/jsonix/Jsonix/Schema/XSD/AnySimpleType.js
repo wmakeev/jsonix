@@ -1,63 +1,39 @@
-/*
- * Jsonix is a JavaScript library which allows you to convert between XML
- * and JavaScript object structures.
- *
- * Copyright (c) 2010 - 2014, Alexey Valikov, Highsource.org
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Alexey Valikov nor the
- *       names of contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ALEXEY VALIKOV BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-Jsonix.Schema.XSD.AnySimpleType = Jsonix.Class(Jsonix.Schema.XSD.AnyType, {
+Jsonix.Schema.XSD.AnySimpleType = Jsonix.Class(Jsonix.Model.TypeInfo, {
 	name : 'AnySimpleType',
 	typeName : Jsonix.Schema.XSD.qname('anySimpleType'),
-	simpleType : true,
-	print : function(value) {
+	initialize : function() {
+		Jsonix.Model.TypeInfo.prototype.initialize.apply(this, []);
+	},	
+	print : function(value, context, output, scope) {
 		throw new Error('Abstract method [print].');
 	},
-	parse : function(text) {
+	parse : function(text, context, input, scope) {
 		throw new Error('Abstract method [parse].');
 	},
-	reprint : function(value, context, scope) {
-		if (Jsonix.Util.Type.isString(value)) {
-			return this.print(this.parse(value, context, scope), context, scope);
+	reprint : function(value, context, output, scope) {
+		// Only reprint when the value is a string but not an instance
+		if (Jsonix.Util.Type.isString(value) && !this.isInstance(value, context, scope)) {
+			// Using null as input as input is not available
+			return this.print(this.parse(value, context, null, scope), context, output, scope);
 		}
 		else
 		{
-			return this.print(value, context, scope);
+			return this.print(value, context, output, scope);
 		}
 	},
-	unmarshal : function(context, input) {
+	unmarshal : function(context, input, scope) {
 		var text = input.getElementText();
 		if (Jsonix.Util.StringUtils.isNotBlank(text)) {
-			return this.parse(text, context);
-		} else {
+			return this.parse(text, context, input, scope);
+		}
+		else
+		{
 			return null;
 		}
 	},
-	marshal : function(context, value, output) {
+	marshal : function(value, context, output, scope) {
 		if (Jsonix.Util.Type.exists(value)) {
-			output.writeCharacters(this.reprint(value, context));
+			output.writeCharacters(this.reprint(value, context, output, scope));
 		}
 	},
 	build: function(context, module)

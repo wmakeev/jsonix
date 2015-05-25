@@ -1,33 +1,3 @@
-/*
- * Jsonix is a JavaScript library which allows you to convert between XML
- * and JavaScript object structures.
- *
- * Copyright (c) 2010 - 2014, Alexey Valikov, Highsource.org
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Alexey Valikov nor the
- *       names of contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ALEXEY VALIKOV BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 function testTwoMarshalString() {
 	var context = new Jsonix.Context([ One, Two ]);
 	var marshaller = context.createMarshaller();
@@ -89,7 +59,9 @@ function testOneMarhshalAnyAttributeType() {
 			attributes : {
 				a : 'a',
 				'{urn:b}b' : 'b',
-				'{urn:c}c:c' : 'c'
+				'{urn:b}b1' : 'b1',
+				'{urn:c}c:c' : 'c',
+				'{urn:c}c1' : 'c1'
 			}
 		}
 	};
@@ -707,4 +679,38 @@ function testOneMarhshalMapElementType() {
 	var node = marshaller.marshalDocument(value);
 	var serializedNode = Jsonix.DOM.serialize(node);
 	logger.debug(serializedNode);
+}
+
+function testOneUnmarhshalUnexpectedElementType() {
+	var context = new Jsonix.Context([ One ]);
+	var unmarshaller = context.createUnmarshaller();
+	var marshaller = context.createMarshaller();
+	var text = '<element>' +
+	//
+	'<unexpected>1<two/>3<four>5</four>6</unexpected>' +
+	// 
+	'<element>earth</element>' +
+	//
+	'</element>';
+	var result = unmarshaller.unmarshalString(text);
+	assertEquals('element', result.name.localPart);
+	assertEquals('earth', result.value.element);
+	logger.debug(marshaller.marshalString(result));
+}
+function testOneMarhshalUnexpectedElementType() {
+	var context = new Jsonix.Context([ One ]);
+	var marshaller = context.createMarshaller();
+	var value = {
+		name : {
+			localPart : 'element'
+		},
+		value : {
+			unexpected : '1',
+			element : 'earth'
+		}
+	};
+	var node = marshaller.marshalDocument(value);
+	var serializedNode = Jsonix.DOM.serialize(node);
+	logger.debug(serializedNode);
+	assertTrue(serializedNode.length > 5);
 }

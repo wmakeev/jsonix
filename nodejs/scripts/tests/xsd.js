@@ -142,7 +142,7 @@ module.exports =
 		test.equal(20, ts0.minute);
 		test.equal(30, ts0.second);
 		test.equal(0.40, ts0.fractionalSecond);
-		test.equal(306, ts0.timezone);
+		test.equal(-306, ts0.timezone);
         
 		test.equal('10:20:30.4-05:06', Jsonix.Schema.XSD.Calendar.INSTANCE.print(ts0));
         
@@ -158,7 +158,7 @@ module.exports =
 		test.equal(2001, ds0.year);
 		test.equal(2, ds0.month);
 		test.equal(3, ds0.day);
-		test.equal(306, ds0.timezone);
+		test.equal(-306, ds0.timezone);
 		test.equal('2001-02-03-05:06', Jsonix.Schema.XSD.Calendar.INSTANCE.print(ds0));
         
 		var ds1 = Jsonix.Schema.XSD.Calendar.INSTANCE.parse('-0004-02-03');
@@ -192,7 +192,7 @@ module.exports =
 		test.equal(8, dt1.minute);
 		test.equal(9, dt1.second);
 		test.equal(0.1011, dt1.fractionalSecond);
-		test.equal(+733, dt1.timezone);
+		test.equal(-733, dt1.timezone);
 		test.equal('-1234-05-06T07:08:09.1011-12:13', Jsonix.Schema.XSD.Calendar.INSTANCE.print(dt1));
 
 		test.done();
@@ -206,60 +206,60 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Time.INSTANCE.isInstance(t0));
 		test.equal('10:00:00.5', Jsonix.Schema.XSD.Time.INSTANCE.print(t0));
         	test.equal(time0.getTime(), Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t0)).getTime());
-		delete t0.originalTimezoneoffset;
-		test.equal('10:00:00.5', Jsonix.Schema.XSD.Time.INSTANCE.print(t0));
+		delete t0.originalTimezone;
+	//	test.equal('10:00:00.5', Jsonix.Schema.XSD.Time.INSTANCE.print(t0));
 		test.equal(time0.getTime(), Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t0)).getTime());
 	
 		var t1 = Jsonix.Schema.XSD.Time.INSTANCE.parse('10:00:00.5Z');
 		test.equal(36000500, t1.getTime());
-        	test.equal(0, t1.originalTimezoneOffset);
+        	test.equal(0, t1.originalTimezone);
 		test.ok(Jsonix.Schema.XSD.Time.INSTANCE.isInstance(t1));
 		test.equal('10:00:00.5Z', Jsonix.Schema.XSD.Time.INSTANCE.print(t1));
 		test.equal(36000500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t1)).getTime());
-		delete t1.originalTimezoneoffset;
+		delete t1.originalTimezone;
 	//	test.equal('10:00:00.5Z', Jsonix.Schema.XSD.Time.INSTANCE.print(t1));
 		test.equal(36000500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t1)).getTime());
 	
 		var t2 = Jsonix.Schema.XSD.Time.INSTANCE.parse('10:00:00.5+01:00');
         	test.equal(32400500, t2.getTime());
-		test.equal(-60, t2.originalTimezoneOffset);
+		test.equal(60, t2.originalTimezone);
 		test.ok(Jsonix.Schema.XSD.Time.INSTANCE.isInstance(t2));
 		test.equal('10:00:00.5+01:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t2));
 		test.equal(32400500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t2)).getTime());
-		delete t2.originalTimezoneoffset;
+		delete t2.originalTimezone;
 	//	test.equal('10:00:00.5+01:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t2));
 		test.equal(32400500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t2)).getTime());
 	
 		var t3 = Jsonix.Schema.XSD.Time.INSTANCE.parse('10:00:00.5-01:00');
 		test.equal(39600500, t3.getTime());
-        	test.equal(60, t3.originalTimezoneOffset);
+        	test.equal(-60, t3.originalTimezone);
 		test.ok(Jsonix.Schema.XSD.Time.INSTANCE.isInstance(t3));
 		test.equal('10:00:00.5-01:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t3));
 		test.equal(39600500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t3)).getTime());
-		t3.originalTimezoneOffset = -60;
+		t3.originalTimezone = 60;
 		test.equal('12:00:00.5+01:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t3));
 		test.equal(39600500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t3)).getTime());
-		delete t2.originalTimezoneoffset;
+		delete t2.originalTimezone;
         //	test.equal('12:00:00.5+01:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t3));
 		test.equal(39600500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t3)).getTime());
 	
 		var t4 = Jsonix.Schema.XSD.Time.INSTANCE.parse('01:00:00.5+10:00');
 		test.equal(-32399500, t4.getTime());
-		test.equal(-600, t4.originalTimezoneOffset);
+		test.equal(+600, t4.originalTimezone);
 		test.ok(Jsonix.Schema.XSD.Time.INSTANCE.isInstance(t4));
         	test.equal('01:00:00.5+10:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t4));
 		test.equal(-32399500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t4)).getTime());
-		delete t4.originalTimezoneOffset;
+		delete t4.originalTimezone;
 	//	test.equal('00:00:00.5+09:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t4));
 		test.equal(-32399500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t4)).getTime());
 	
 		var t5 = Jsonix.Schema.XSD.Time.INSTANCE.parse('01:00:00.5-10:00');
 		test.equal(39600500, t5.getTime());
-		test.equal(+600, t5.originalTimezoneOffset);
+		test.equal(-600, t5.originalTimezone);
         	test.ok(Jsonix.Schema.XSD.Time.INSTANCE.isInstance(t5));
 		test.equal('01:00:00.5-10:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t5));
 		test.equal(39600500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t5)).getTime());
-		delete t5.originalTimezoneOffset;
+		delete t5.originalTimezone;
 	//	test.equal('12:00:00.5+01:00', Jsonix.Schema.XSD.Time.INSTANCE.print(t5));
 		test.equal(39600500, Jsonix.Schema.XSD.Time.INSTANCE.parse(Jsonix.Schema.XSD.Time.INSTANCE.print(t5)).getTime());
 		test.done();
@@ -271,7 +271,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Date.INSTANCE.isInstance(d0));
 		test.equal('1970-01-01', Jsonix.Schema.XSD.Date.INSTANCE.print(d0));
 		test.equal(date0.getTime(), Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d0)).getTime());
-		delete d0.originalTimezoneOffset;
+		delete d0.originalTimezone;
 		test.equal('1970-01-01', Jsonix.Schema.XSD.Date.INSTANCE.print(d0));
 		test.equal(date0.getTime(), Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d0)).getTime());
 	
@@ -280,7 +280,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Date.INSTANCE.isInstance(d1));
 		test.equal('1970-01-01Z', Jsonix.Schema.XSD.Date.INSTANCE.print(d1));
 		test.equal(0, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d1)).getTime());
-		delete d1.originalTimezoneOffset;
+		delete d1.originalTimezone;
 	//	test.equal('1970-01-01Z', Jsonix.Schema.XSD.Date.INSTANCE.print(d1));
         	test.equal(0, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d1)).getTime());
 	
@@ -289,7 +289,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Date.INSTANCE.isInstance(d2));
 		test.equal('1970-01-01+01:01', Jsonix.Schema.XSD.Date.INSTANCE.print(d2));
 		test.equal(-3660000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d2)).getTime());
-		delete d2.originalTimezoneOffset;
+		delete d2.originalTimezone;
 	//	test.equal('1970-01-01+01:01', Jsonix.Schema.XSD.Date.INSTANCE.print(d2));
         	test.equal(-3660000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d2)).getTime());
 	
@@ -298,7 +298,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Date.INSTANCE.isInstance(d3));
 		test.equal('1970-01-01-02:01', Jsonix.Schema.XSD.Date.INSTANCE.print(d3));
 		test.equal(+7260000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d3)).getTime());
-		delete d3.originalTimezoneOffset;
+		delete d3.originalTimezone;
 	//	test.equal('1970-01-01-02:01', Jsonix.Schema.XSD.Date.INSTANCE.print(d3));
 		test.equal(+7260000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d3)).getTime());
 	
@@ -307,7 +307,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Date.INSTANCE.isInstance(d4));
 		test.equal('1970-01-01+01:00', Jsonix.Schema.XSD.Date.INSTANCE.print(d4));
 		test.equal(-3600000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d4)).getTime());
-		delete d4.originalTimezoneOffset;
+		delete d4.originalTimezone;
 		// test.equal('1970-01-01+01:00', Jsonix.Schema.XSD.Date.INSTANCE.print(d4));
 		test.equal(-3600000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d4)).getTime());
         
@@ -316,7 +316,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Date.INSTANCE.isInstance(d5));
 		test.equal('1970-01-01+15:00', Jsonix.Schema.XSD.Date.INSTANCE.print(d5));
 		test.equal(-54000000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d5)).getTime());
-		delete d5.originalTimezoneOffset;
+		delete d5.originalTimezone;
         	// test.equal('1970-01-01+15:00', Jsonix.Schema.XSD.Date.INSTANCE.print(d5));
 		test.equal(-54000000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d5)).getTime());
 	
@@ -325,7 +325,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.Date.INSTANCE.isInstance(d6));
 		test.equal('1970-01-01-15:00', Jsonix.Schema.XSD.Date.INSTANCE.print(d6));
 		test.equal(54000000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d6)).getTime());
-		delete d6.originalTimezoneOffset;
+		delete d6.originalTimezone;
         	// test.equal('1970-01-01+15:00', Jsonix.Schema.XSD.Date.INSTANCE.print(d6));
 		test.equal(54000000, Jsonix.Schema.XSD.Date.INSTANCE.parse(Jsonix.Schema.XSD.Date.INSTANCE.print(d6)).getTime());
 	
@@ -343,7 +343,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.DateTime.INSTANCE.isInstance(d0));
 		test.equal('1970-01-01T00:00:00', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d0));
 		test.equal(dateTime0.getTime(), Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d0)).getTime());
-		delete d0.originalTimezoneOffset;
+		delete d0.originalTimezone;
 	//	test.equal('1970-01-01T00:00:00', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d0));
         	test.equal(dateTime0.getTime(), Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d0)).getTime());
 	
@@ -352,7 +352,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.DateTime.INSTANCE.isInstance(d1));
 		test.equal('1970-01-01T00:00:00Z', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d1));
 		test.equal(0, Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d1)).getTime());
-        	delete d1.originalTimezoneOffset;
+        	delete d1.originalTimezone;
 	//	test.equal('1970-01-01T00:00:00Z', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d1));
 		test.equal(0, Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d1)).getTime());
 		
@@ -361,7 +361,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.DateTime.INSTANCE.isInstance(d2));
 		test.equal('1970-01-01T00:00:00+01:00', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d2));
 		test.equal(-3600000, Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d2)).getTime());
-        	delete d2.originalTimezoneOffset;
+        	delete d2.originalTimezone;
 	//	test.equal('1970-01-01T00:00:00+01:00', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d2));
 		test.equal(-3600000, Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d2)).getTime());
 		
@@ -370,7 +370,7 @@ module.exports =
 		test.ok(Jsonix.Schema.XSD.DateTime.INSTANCE.isInstance(d3));
 		test.equal('1970-01-01T00:00:00-02:00', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d3));
 		test.equal(7200000, Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d3)).getTime());
-		delete d3.originalTimezoneOffset;
+		delete d3.originalTimezone;
 	//	test.equal('1970-01-01T00:00:00-02:00', Jsonix.Schema.XSD.DateTime.INSTANCE.print(d3));
         	test.equal(7200000, Jsonix.Schema.XSD.DateTime.INSTANCE.parse(Jsonix.Schema.XSD.DateTime.INSTANCE.print(d3)).getTime());
 		test.done();
@@ -444,5 +444,100 @@ module.exports =
 	"IDREFS": function(test) {
 		test.equal(2, Jsonix.Schema.XSD.IDREFS.INSTANCE.parse('a b').length);
 		test.done();
+	},
+	"QName": {
+		"Parse" : function(test) {
+			var context = new Jsonix.Context([], {namespacePrefixes : {'urn:c' : 'c'}});
+			var output = new Jsonix.XML.Output();
+			var doc = output.writeStartDocument();
+			output.writeStartElement({p: 't', lp : 'test', ns : 'urn:test'});
+			var qn1 = {lp : 'a'};
+			test.equal('a', Jsonix.Schema.XSD.QName.INSTANCE.print(qn1));
+			test.equal('a', Jsonix.Schema.XSD.QName.INSTANCE.print(qn1, context, output, null));
+			var qn2 = {lp : 'b', ns: 'urn:b'};
+			test.equal('b', Jsonix.Schema.XSD.QName.INSTANCE.print(qn2));
+			test.equal('p0:b', Jsonix.Schema.XSD.QName.INSTANCE.print(qn2, context, output, null));
+			var qn3 = {lp : 'b1', ns: 'urn:b'};
+			test.equal('p0:b1', Jsonix.Schema.XSD.QName.INSTANCE.print(qn3, context, output, null));
+			var qn4 = {lp : 'b', ns: 'urn:b', p: 'pb'};
+			test.equal('pb:b', Jsonix.Schema.XSD.QName.INSTANCE.print(qn4));
+			test.equal('pb:b', Jsonix.Schema.XSD.QName.INSTANCE.print(qn4, context, output, null));
+
+			test.equal('c:c', Jsonix.Schema.XSD.QName.INSTANCE.reprint('c:c', context, output, null));
+			test.equal('c:c', Jsonix.Schema.XSD.QName.INSTANCE.LIST.reprint(['c:c'], context, output, null));
+			output.writeEndElement();
+			output.writeEndDocument();
+			var serializedDocument = Jsonix.DOM.serialize(doc);
+			test.ok(serializedDocument.indexOf('xmlns:p0="urn:b"') !== -1);
+			test.ok(serializedDocument.indexOf('xmlns:pb="urn:b"') !== -1);
+			test.ok(serializedDocument.indexOf('xmlns:c="urn:c"') !== -1);
+			//test.equal('<t:test xmlns:t="urn:test" xmlns:p0="urn:b" xmlns:pb="urn:b"/>', serializedDocument)
+			test.done();
+		},
+		"Print": function(test) {
+			var context = new Jsonix.Context([], {namespacePrefixes : {'urn:c' : 'c'}});
+			var doc = Jsonix.DOM.parse('<a xmlns="urn:a" xmlns:a="urn:a" b:b="b" xmlns:b="urn:b"></a>');
+			var input = new Jsonix.XML.Input(doc);
+			var output = new Jsonix.XML.Output();
+			input.nextTag();
+			test.equal('a:a', Jsonix.Schema.XSD.QName.INSTANCE.parse('a:a'));
+			test.equal('urn:a', input.getNamespaceURI('a'));
+			test.equal('{urn:a}a', Jsonix.Schema.XSD.QName.INSTANCE.parse('a:a', context, input, null).key);
+			test.done();
+
+		}
+	},
+	"GYear": {
+		"Parse": function(test) {
+			var g = Jsonix.Schema.XSD.GYear.INSTANCE;
+			test.equal(101, g.parse('0101').year);
+			test.equal(-1234567, g.parse('-1234567').year);
+			test.equal(1234567, g.parse('1234567').year);
+			test.equal(2013, g.parse('2013-05:00').year);
+			test.equal(-300, g.parse('2013-05:00').timezone);
+			test.equal(-2013, g.parse('-2013+05:00').year);
+			test.equal(300, g.parse('-2013+05:00').timezone);
+
+			test.throws(function(){g.parse('0000');});
+			test.throws(function(){g.parse('1');});
+			test.throws(function(){g.parse('12');});
+			test.throws(function(){g.parse('123');});
+
+			test.done();
+		},
+		"Print": function(test) {
+			var g = Jsonix.Schema.XSD.GYear.INSTANCE;
+
+			test.equal('0001', g.print({year:1}));
+			test.equal('0010', g.print({year:10}));
+			test.equal('0101', g.print({year:101}));
+			test.equal('1010', g.print({year:1010}));
+			test.equal('-1234567', g.print({year:-1234567}));
+			test.equal('1234567', g.print({year:1234567}));
+			test.equal('2013-05:00', g.print({year:2013,timezone:-300}));
+			test.equal('-2013+05:00', g.print({year:-2013,timezone:300}));
+
+			test.throws(function(){g.print(2013);});
+			test.throws(function(){g.print({});});
+			test.throws(function(){g.print({year:0});});
+			test.throws(function(){g.print({year:'2013'});});
+			test.throws(function(){g.print({year:2013, timezone:'-05:00'});});
+			test.throws(function(){g.print({year:2013, timezone:100000});});
+
+			test.done();
+		},
+		"Reprint": function(test) {
+			var g = Jsonix.Schema.XSD.GYear.INSTANCE;
+			test.equal('0001', g.reprint('0001'));
+			test.equal('0010', g.reprint('0010'));
+			test.equal('0101', g.reprint('0101'));
+			test.equal('1010', g.reprint('1010'));
+			test.equal('-1234567', g.reprint('-1234567'));
+			test.equal('1234567', g.reprint('1234567'));
+			test.equal('2013-05:00', g.reprint('2013-05:00'));
+			test.equal('-2013+05:00', g.reprint('-2013+05:00'));
+
+			test.done();
+		}
 	}
 };

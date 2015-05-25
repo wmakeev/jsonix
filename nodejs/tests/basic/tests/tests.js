@@ -1,3 +1,7 @@
+process.on('uncaughtException', function(err) {
+  console.error(err.stack);
+});
+
 var http = require('http');
 var server;
 module.exports = 
@@ -24,5 +28,8 @@ module.exports =
 		"One" : require('./one'),
 		"Two" : require('./two'),
 		"PO" : require('./po'),
+		"XMLNS" : require('./xmlns'),
+		"GH48" : require('./gh48'),
+		"GH56" : require('./gh56')
 	}
 };

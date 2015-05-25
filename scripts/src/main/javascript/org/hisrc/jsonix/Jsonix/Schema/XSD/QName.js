@@ -1,36 +1,55 @@
-/*
- * Jsonix is a JavaScript library which allows you to convert between XML
- * and JavaScript object structures.
- *
- * Copyright (c) 2010 - 2014, Alexey Valikov, Highsource.org
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Alexey Valikov nor the
- *       names of contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ALEXEY VALIKOV BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 Jsonix.Schema.XSD.QName = Jsonix.Class(Jsonix.Schema.XSD.AnySimpleType, {
 	name : 'QName',
 	typeName : Jsonix.Schema.XSD.qname('QName'),
+	print : function(value, context, output, scope) {
+		var qName = Jsonix.XML.QName.fromObject(value);
+		var prefix;
+		var localPart = qName.localPart;
+		if (output) {
+			// If QName does not provide the prefix, let it be generated
+			prefix = output.getPrefix(qName.namespaceURI, qName.prefix||null);
+			output.declareNamespace(qName.namespaceURI, prefix);
+		} else {
+			prefix = qName.prefix;
+		}
+		return !prefix ? localPart : (prefix + ':' + localPart);
+	},
+	parse : function(value, context, input, scope) {
+		Jsonix.Util.Ensure.ensureString(value);
+		value = Jsonix.Util.StringUtils.trim(value);
+		var prefix;
+		var localPart;
+		var colonPosition = value.indexOf(':');
+		if (colonPosition === -1) {
+			prefix = '';
+			localPart = value;
+		} else if (colonPosition > 0 && colonPosition < (value.length - 1)) {
+			prefix = value.substring(0, colonPosition);
+			localPart = value.substring(colonPosition + 1);
+		} else {
+			throw new Error('Invalid QName [' + value + '].');
+		}
+		var namespaceContext = input || context || null;
+		if (!namespaceContext)
+		{
+			return value;
+		}
+		else
+		{
+			var namespaceURI = namespaceContext.getNamespaceURI(prefix);
+			if (Jsonix.Util.Type.isString(namespaceURI))
+			{
+				return new Jsonix.XML.QName(namespaceURI, localPart, prefix);
+			}
+			else
+			{
+				throw new Error('Prefix [' + prefix + '] of the QName [' + value + '] is not bound in this context.');
+			}
+		}
+	},
+	isInstance : function(value, context, scope) {
+		return (value instanceof Jsonix.XML.QName) || (Jsonix.Util.Type.isObject(value) && Jsonix.Util.Type.isString(value.localPart || value.lp));
+	},
 	CLASS_NAME : 'Jsonix.Schema.XSD.QName'
 });
 Jsonix.Schema.XSD.QName.INSTANCE = new Jsonix.Schema.XSD.QName();

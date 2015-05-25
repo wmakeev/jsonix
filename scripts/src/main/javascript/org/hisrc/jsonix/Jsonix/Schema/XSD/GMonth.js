@@ -1,38 +1,58 @@
-/*
- * Jsonix is a JavaScript library which allows you to convert between XML
- * and JavaScript object structures.
- *
- * Copyright (c) 2010 - 2014, Alexey Valikov, Highsource.org
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Alexey Valikov nor the
- *       names of contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ALEXEY VALIKOV BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-Jsonix.Schema.XSD.GMonth = Jsonix.Class(Jsonix.Schema.XSD.AnySimpleType, {
+Jsonix.Schema.XSD.GMonth = Jsonix.Class(Jsonix.Schema.XSD.Calendar, {
 	name : 'GMonth',
 	typeName : Jsonix.Schema.XSD.qname('gMonth'),
-	CLASS_NAME : 'Jsonix.Schema.XSD.GMonth'
+	CLASS_NAME : 'Jsonix.Schema.XSD.GMonth',
+
+	parse : function(value, context, input, scope) {
+		var returnValue = this.splitGMonth(value);
+		returnValue.toString = function() {
+			return "EmptyXMLElement. Call embedded 'month' or 'timezone' property";
+		};
+
+		return returnValue;
+	},
+
+	reprint : function(value, context, input, scope) {
+		if (value instanceof Date) {
+			// TODO: timezoneOffset -> timezone
+			return "--" + this.printMonth(value.getMonth() + 1);
+		}
+		return "--" + this.printMonth(value.month);
+
+	},
+
+	/**
+	 * @param {string}
+	 *            month datetype in ISO 8601 format
+	 * @returns {object} pair of month, timestamp properties as a number, date
+	 *          object
+	 * @throws {Error}
+	 *             if the datetype is not valid
+	 * 
+	 */
+	splitGMonth : function(value) {
+		var gMonthExpression = new RegExp("^" + Jsonix.Schema.XSD.Calendar.GMONTH_PATTERN + "$");
+		var results = value.match(gMonthExpression);
+
+		if (results !== null) {
+
+			var gmt = "";
+			if (Jsonix.Util.Type.exists(results[3])) {
+				var splittedTimeZones = results[3].split(":");
+				gmt = " GMT" + splittedTimeZones[0] + splittedTimeZones[1];
+			}
+
+			var splitedGMonth = {
+				month : parseInt(results[2], 10),
+				timezone : this.convertTimeZoneString(results[3]),
+				date : new Date(results[2] + " 01 1970 00:00:00" + gmt)
+			};
+
+			return splitedGMonth;
+		}
+
+		throw new Error('Value [' + value + '] doesn\'t match the gMonth pattern.');
+	}
 });
 Jsonix.Schema.XSD.GMonth.INSTANCE = new Jsonix.Schema.XSD.GMonth();
-Jsonix.Schema.XSD.GMonth.INSTANCE.LIST = new Jsonix.Schema.XSD.List(
-		Jsonix.Schema.XSD.GMonth.INSTANCE);
+Jsonix.Schema.XSD.GMonth.INSTANCE.LIST = new Jsonix.Schema.XSD.List(Jsonix.Schema.XSD.GMonth.INSTANCE);

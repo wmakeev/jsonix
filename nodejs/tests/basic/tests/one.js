@@ -21,6 +21,20 @@ module.exports =
 		test.ok(serializedNode.length > 5);
 		test.done();
 	},
+	"MarshalValueTypeDirectly" : function(test)
+	{
+		var context = new Jsonix.Context([ One ]);
+		var marshaller = context.createMarshaller();
+		var value = {
+			name : "value",
+			value : "value"
+		};
+		var node = marshaller.marshalDocument(value);
+		var serializedNode = Jsonix.DOM.serialize(node);
+		console.log(serializedNode);
+		test.equal("<value>value</value>", serializedNode);
+		test.done();
+	},
 	"UnmarshalValueType" : function(test)
 	{
 		var context = new Jsonix.Context([ One ]);
@@ -85,6 +99,21 @@ module.exports =
 		var serializedNode = Jsonix.DOM.serialize(node);
 		console.log(serializedNode);
 		test.ok(serializedNode.length > 5);
+		test.done();
+	},
+	"MarhshalAttributeTypeDirectly" : function(test) {
+		var context = new Jsonix.Context([ One ], {
+			namespacePrefixes : {}
+		});
+		var marshaller = context.createMarshaller();
+		var value = {
+			name :  "attribute",
+			value : "test"
+		};
+		var node = marshaller.marshalDocument(value);
+		var serializedNode = Jsonix.DOM.serialize(node);
+		console.log(serializedNode);
+		test.equal('<attribute attribute="test"/>', serializedNode);
 		test.done();
 	},
 	"UnmarshalAttributeType" : function(test) {
@@ -267,9 +296,7 @@ module.exports =
 			},
 			value : {
 				element : {
-					name : {
-						localPart : 'string'
-					},
+					name : 'string',
 					value : 'tiger'
 				}
 			}
@@ -462,9 +489,7 @@ module.exports =
 					},
 					value : 'one'
 				}, {
-					name : {
-						localPart : 'value'
-					},
+					name : 'value',
 					value : {
 						value : 'two'
 					}
@@ -684,9 +709,7 @@ module.exports =
 		var context = new Jsonix.Context([ One, Two ]);
 		var marshaller = context.createMarshaller();
 		var value = {
-			name : {
-				localPart : "string"
-			},
+			name : 'string',
 			value : 'text'
 		};
 		var node = marshaller.marshalDocument(value);

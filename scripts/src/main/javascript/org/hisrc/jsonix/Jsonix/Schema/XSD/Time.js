@@ -1,37 +1,7 @@
-/*
- * Jsonix is a JavaScript library which allows you to convert between XML
- * and JavaScript object structures.
- *
- * Copyright (c) 2010 - 2014, Alexey Valikov, Highsource.org
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Alexey Valikov nor the
- *       names of contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ALEXEY VALIKOV BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 Jsonix.Schema.XSD.Time = Jsonix.Class(Jsonix.Schema.XSD.Calendar, {
 	name : 'Time',
 	typeName : Jsonix.Schema.XSD.qname('time'),
-	parse : function(value) {
+	parse : function(value, context, input, scope) {
 		var calendar = this.parseTime(value);
 		var date = new Date();
 		date.setFullYear(1970);
@@ -43,41 +13,41 @@ Jsonix.Schema.XSD.Time = Jsonix.Class(Jsonix.Schema.XSD.Calendar, {
 		if (Jsonix.Util.Type.isNumber(calendar.fractionalSecond)) {
 			date.setMilliseconds(Math.floor(1000 * calendar.fractionalSecond));
 		}
-		var timezoneOffset;
+		var timezone;
 		var unknownTimezone;
-		var localTimezoneOffset = date.getTimezoneOffset();
+		var localTimezone = - date.getTimezoneOffset();
 		if (Jsonix.Util.NumberUtils.isInteger(calendar.timezone))
 		{
-			timezoneOffset = calendar.timezone;
+			timezone = calendar.timezone;
 			unknownTimezone = false;
 		}
 		else
 		{
 			// Unknown timezone
-			timezoneOffset = localTimezoneOffset;
+			timezone = localTimezone;
 			unknownTimezone = true;
 		}
 		//
-		var result = new Date(date.getTime() + (60000 * (timezoneOffset - localTimezoneOffset)));
+		var result = new Date(date.getTime() + (60000 * ( - timezone + localTimezone)));
 		if (unknownTimezone)
 		{
 			// null denotes "unknown timezone"
-			result.originalTimezoneOffset = null;
+			result.originalTimezone = null;
 		}
 		else
 		{
-			result.originalTimezoneOffset = timezoneOffset;
+			result.originalTimezone = timezone;
 		}
 		return result;
 	},
-	print : function(value) {
+	print : function(value, context, output, scope) {
 		Jsonix.Util.Ensure.ensureDate(value);
 		var time = value.getTime();
 		if (time <= -86400000 && time >= 86400000) {
 			throw new Error('Invalid time [' + value + '].');
 		}
 		// Original timezone was unknown, just use current time, no timezone
-		if (value.originalTimezoneOffset === null)
+		if (value.originalTimezone === null)
 		{
 			return this.printTime(new Jsonix.XML.Calendar({
 				hour : value.getHours(),
@@ -89,16 +59,16 @@ Jsonix.Schema.XSD.Time = Jsonix.Class(Jsonix.Schema.XSD.Calendar, {
 		else
 		{
 			var correctedValue;
-			var timezoneOffset;
-			var localTimezoneOffset = value.getTimezoneOffset();
-			if (Jsonix.Util.NumberUtils.isInteger(value.originalTimezoneOffset))
+			var timezone;
+			var localTimezone = - value.getTimezoneOffset();
+			if (Jsonix.Util.NumberUtils.isInteger(value.originalTimezone))
 			{
-				timezoneOffset = value.originalTimezoneOffset;
-				correctedValue = new Date(value.getTime() - (60000 * (timezoneOffset - localTimezoneOffset)));
+				timezone = value.originalTimezone;
+				correctedValue = new Date(value.getTime() - (60000 * ( - timezone + localTimezone)));
 			}
 			else
 			{
-				timezoneOffset = localTimezoneOffset;
+				timezone = localTimezone;
 				correctedValue = value;
 			}
 			var correctedTime = correctedValue.getTime();
@@ -108,21 +78,21 @@ Jsonix.Schema.XSD.Time = Jsonix.Class(Jsonix.Schema.XSD.Calendar, {
 					minute : correctedValue.getMinutes(),
 					second : correctedValue.getSeconds(),
 					fractionalSecond : (correctedValue.getMilliseconds() / 1000),
-					timezone: timezoneOffset
+					timezone: timezone
 				}));
 			} else {
-				var timezoneOffsetHours = Math.ceil(-correctedTime / 3600000);
+				var timezoneHours = Math.ceil(-correctedTime / 3600000);
 				return this.printTime(new Jsonix.XML.Calendar({
-					hour : (correctedValue.getHours() + timezoneOffsetHours + timezoneOffset / 60 ) % 24,
+					hour : (correctedValue.getHours() + timezoneHours - timezone / 60 ) % 24,
 					minute : correctedValue.getMinutes(),
 					second : correctedValue.getSeconds(),
 					fractionalSecond : (correctedValue.getMilliseconds() / 1000),
-					timezone : - timezoneOffsetHours * 60
+					timezone : timezoneHours * 60
 				}));
 			}
 		}
 	},
-	isInstance : function(value) {
+	isInstance : function(value, context, scope) {
 		return Jsonix.Util.Type.isDate(value) && value.getTime() > -86400000 && value.getTime() < 86400000;
 	},
 	CLASS_NAME : 'Jsonix.Schema.XSD.Time'

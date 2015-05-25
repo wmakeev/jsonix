@@ -6,24 +6,13 @@
 	<parent>
 		<groupId>org.hisrc.jsonix</groupId>
 		<artifactId>jsonix-project</artifactId>
-		<version>2.0.11-SNAPHSHOT</version>
-		<relativePath>../pom.xml</relativePath>
+		<version>2.2.2-SNAPSHOT</version>
 	</parent>
 	<dependencies>
 		<dependency>
-			<groupId>org.jvnet.ogc</groupId>
-			<artifactId>ows-v_1_1_0-schema</artifactId>
+			<groupId>org.glassfish.jaxb</groupId>
+			<artifactId>jaxb-runtime</artifactId>
 			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jvnet.ogc</groupId>
-			<artifactId>wps-v_1_0_0-schema</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.jvnet.jaxb2_commons</groupId>
-			<artifactId>jaxb2-basics-jaxb-xjc</artifactId>
-			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>net.disy.legato</groupId>
@@ -50,43 +39,6 @@
 			</testResource>
 		</testResources>
 		<plugins>
-			<plugin>
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>license-remove-headers</id>
-						<phase>process-sources</phase>
-						<goals>
-							<goal>remove</goal>
-						</goals>
-						<configuration>
-							<basedir>${project.build.directory}/scripts</basedir>
-							<includes>
-								<include>**/*.js</include>
-							</includes>
-							<excludes>
-								<include>**/*.fragmentjs</include>
-							</excludes>
-						</configuration>
-					</execution>
-					<execution>
-						<id>license-format-headers</id>
-						<phase>prepare-package</phase>
-						<goals>
-							<goal>format</goal>
-						</goals>
-						<configuration>
-							<basedir>${project.build.outputDirectory}</basedir>
-							<includes>
-								<include>org/hisrc/jsonix/Jsonix-all.js</include>
-								<include>org/hisrc/jsonix/Jsonix-min.js</include>
-							</includes>
-							<useDefaultExcludes>false</useDefaultExcludes>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>			
 			<plugin>
 				<groupId>net.alchim31.maven</groupId>
 				<artifactId>yuicompressor-maven-plugin</artifactId>
@@ -161,20 +113,20 @@
 							<goal>run</goal>
 						</goals>
 						<configuration>
-							<tasks>
+							<target>
 								<taskdef name="jslint" classname="com.googlecode.jslint4java.ant.JSLintTask" classpathref="maven.plugin.classpath" />
 								<jslint encoding="UTF-8">
 									<formatter type="plain" />
 									<fileset dir="${basedir}/src/main/javascript" includes="**/*.js" />
 								</jslint>
-							</tasks>
+							</target>
 						</configuration>
 					</execution>
 					<execution>
 						<id>copy-scripts</id>
 						<phase>generate-sources</phase>
 						<configuration>
-							<tasks>
+							<target>
 								<mkdir dir="${project.build.directory}/scripts" />
 								<copy todir="${project.build.directory}/scripts">
 									<fileset dir="${basedir}/src/main/javascript">
@@ -188,7 +140,7 @@
 										<include name="**/*.fragmentjs" />
 									</fileset>
 								</copy>
-							</tasks>
+							</target>
 						</configuration>
 						<goals>
 							<goal>run</goal>
@@ -196,8 +148,6 @@
 					</execution>
 				</executions>
 			</plugin>
-			
-			
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
 				<inherited>true</inherited>

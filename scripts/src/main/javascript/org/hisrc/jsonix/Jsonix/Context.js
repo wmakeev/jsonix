@@ -1,59 +1,46 @@
-/*
- * Jsonix is a JavaScript library which allows you to convert between XML
- * and JavaScript object structures.
- *
- * Copyright (c) 2010 - 2014, Alexey Valikov, Highsource.org
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Alexey Valikov nor the
- *       names of contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ALEXEY VALIKOV BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 Jsonix.Context = Jsonix
-		.Class({
+		.Class(Jsonix.Mapping.Styled, {
 			modules : [],
 			typeInfos : null,
+			typeNameKeyToTypeInfo : null,
 			elementInfos : null,
-			properties : null,
+			options : null,
 			substitutionMembersMap : null,
 			scopedElementInfosMap : null,
-			initialize : function(mappings, properties) {
+			supportXsiType : true,
+			initialize : function(mappings, options) {
+				Jsonix.Mapping.Styled.prototype.initialize.apply(this, [options]);
 				this.modules = [];
 				this.elementInfos = [];
 				this.typeInfos = {};
+				this.typeNameKeyToTypeInfo = {};
 				this.registerBuiltinTypeInfos();
-				this.properties = {
-					namespacePrefixes : {}
-				};
+				this.namespacePrefixes = {};
+				this.prefixNamespaces = {};
 				this.substitutionMembersMap = {};
 				this.scopedElementInfosMap = {};
 
-				// Initialize properties
-				if (Jsonix.Util.Type.exists(properties)) {
-					if (Jsonix.Util.Ensure.ensureObject(properties)) {
-						if (Jsonix.Util.Type
-								.isObject(properties.namespacePrefixes)) {
-							this.properties.namespacePrefixes = properties.namespacePrefixes;
-						}
+				// Initialize options
+				if (Jsonix.Util.Type.exists(options)) {
+					Jsonix.Util.Ensure.ensureObject(options);
+					if (Jsonix.Util.Type
+							.isObject(options.namespacePrefixes)) {
+						this.namespacePrefixes = 
+							Jsonix.Util.Type.cloneObject(options.namespacePrefixes, {});
+					}
+					if (Jsonix.Util.Type
+							.isBoolean(options.supportXsiType)) {
+						this.supportXsiType = options.supportXsiType; 
+					}
+				}
+				
+				// Initialize prefix/namespace mapping
+				for (var ns in this.namespacePrefixes)
+				{
+					if (this.namespacePrefixes.hasOwnProperty(ns))
+					{
+						p = this.namespacePrefixes[ns];
+						this.prefixNamespaces[p] = ns;
 					}
 				}
 				// Initialize modules
@@ -71,10 +58,14 @@ Jsonix.Context = Jsonix
 			},
 			createModule : function(mapping) {
 				var module;
-				if (mapping instanceof Jsonix.Model.Module) {
+				if (mapping instanceof this.mappingStyle.module) {
 					module = mapping;
 				} else {
-					module = new Jsonix.Model.Module(mapping);
+					mapping = Jsonix.Util.Type.cloneObject(mapping);
+					module = new this.mappingStyle.module(mapping, 
+					{
+						mappingStyle : this.mappingStyle
+					});
 				}
 				return module;
 			},
@@ -104,8 +95,13 @@ Jsonix.Context = Jsonix
 			},
 			registerTypeInfo : function(typeInfo) {
 				Jsonix.Util.Ensure.ensureObject(typeInfo);
-				Jsonix.Util.Ensure.ensureString(typeInfo.name);
-				this.typeInfos[typeInfo.name] = typeInfo;
+				var n = typeInfo.name||typeInfo.n||null;
+				Jsonix.Util.Ensure.ensureString(n);
+				this.typeInfos[n] = typeInfo;
+				if (typeInfo.typeName && typeInfo.typeName.key)
+				{
+					this.typeNameKeyToTypeInfo[typeInfo.typeName.key] = typeInfo;
+				}
 			},
 			resolveTypeInfo : function(mapping, module) {
 				if (!Jsonix.Util.Type.exists(mapping)) {
@@ -113,21 +109,32 @@ Jsonix.Context = Jsonix
 				} else if (mapping instanceof Jsonix.Model.TypeInfo) {
 					return mapping;
 				} else if (Jsonix.Util.Type.isString(mapping)) {
-					if (!this.typeInfos[mapping]) {
-						throw new Error('Type info [' + mapping + '] is not known in this context.');
+					var typeInfoName;
+					// If mapping starts with '.' consider it to be a local type name in this module
+					if (mapping.length > 0 && mapping.charAt(0) === '.')
+					{
+						var n = module.name || module.n || undefined;
+						Jsonix.Util.Ensure.ensureObject(module, 'Type info mapping can only be resolved if module is provided.');
+						Jsonix.Util.Ensure.ensureString(n, 'Type info mapping can only be resolved if module name is provided.');
+						typeInfoName = n + mapping;
+					}
+					else
+					{
+						typeInfoName = mapping;
+					}
+					if (!this.typeInfos[typeInfoName]) {
+						throw new Error('Type info [' + typeInfoName + '] is not known in this context.');
 					} else {
-						return this.typeInfos[mapping];
+						return this.typeInfos[typeInfoName];
 					}
 				} else {
-					Jsonix.Util.Ensure
-							.ensureObject(module,
-									'Type info mapping can only be resolved if module is provided.');
+					Jsonix.Util.Ensure.ensureObject(module, 'Type info mapping can only be resolved if module is provided.');
 					var typeInfo = module.createTypeInfo(mapping);
 					typeInfo.build(this, module);
 					return typeInfo;
 				}
 			},
-			registerElementInfo : function(elementInfo) {
+			registerElementInfo : function(elementInfo, module) {
 				Jsonix.Util.Ensure.ensureObject(elementInfo);
 				this.elementInfos.push(elementInfo);
 
@@ -145,7 +152,7 @@ Jsonix.Context = Jsonix
 
 				var scopeKey;
 				if (Jsonix.Util.Type.exists(elementInfo.scope)) {
-					scopeKey = this.resolveTypeInfo(elementInfo.scope).name;
+					scopeKey = this.resolveTypeInfo(elementInfo.scope, module).name;
 				} else {
 					scopeKey = '##global';
 				}
@@ -158,6 +165,37 @@ Jsonix.Context = Jsonix
 				}
 				scopedElementInfos[elementInfo.elementName.key] = elementInfo;
 
+			},
+			getTypeInfoByValue : function(value)
+			{
+				if (!Jsonix.Util.Type.exists(value))
+				{
+					return undefined;
+				}
+				if (Jsonix.Util.Type.isObject(value))
+				{
+					var typeName = value.TYPE_NAME;
+					if (Jsonix.Util.Type.isString(typeName))
+					{
+						var typeInfoByName = this.getTypeInfoByName(typeName);
+						if (typeInfoByName)
+						{
+							return typeInfoByName;
+						}
+					}
+				}
+				return undefined;
+			},
+			// TODO public API
+			getTypeInfoByName : function(name) {
+				return this.typeInfos[name];
+			},
+			getTypeInfoByTypeName : function(typeName) {
+				var tn = Jsonix.XML.QName.fromObjectOrString(typeName, this);
+				return this.typeNameKeyToTypeInfo[tn.key];
+			},
+			getTypeInfoByTypeNameKey : function(typeNameKey) {
+				return this.typeNameKeyToTypeInfo[typeNameKey];
 			},
 			getElementInfo : function(name, scope) {
 				if (Jsonix.Util.Type.exists(scope)) {
@@ -189,15 +227,32 @@ Jsonix.Context = Jsonix
 						.fromObject(name).key];
 			},
 			createMarshaller : function() {
-				return new Jsonix.Context.Marshaller(this);
+				return new this.mappingStyle.marshaller(this);
 			},
 			createUnmarshaller : function() {
-				return new Jsonix.Context.Unmarshaller(this);
+				return new this.mappingStyle.unmarshaller(this);
+			},
+			getNamespaceURI : function(prefix) {
+				Jsonix.Util.Ensure.ensureString(prefix);
+				return this.prefixNamespaces[prefix];
+			},
+			getPrefix : function(namespaceURI, defaultPrefix) {
+				Jsonix.Util.Ensure.ensureString(namespaceURI);
+				var prefix = this.namespacePrefixes[namespaceURI];
+				if (Jsonix.Util.Type.isString(prefix))
+				{
+					return prefix;
+				}
+				else
+				{
+					return defaultPrefix;
+				}
 			},
 			/**
 			 * Builtin type infos.
 			 */
-			builtinTypeInfos : [ Jsonix.Schema.XSD.AnyType.INSTANCE,
+			builtinTypeInfos : [
+			        Jsonix.Schema.XSD.AnyType.INSTANCE,
 					Jsonix.Schema.XSD.AnyURI.INSTANCE,
 					Jsonix.Schema.XSD.Base64Binary.INSTANCE,
 					Jsonix.Schema.XSD.Boolean.INSTANCE,

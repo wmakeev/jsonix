@@ -1,41 +1,18 @@
-/*
- * Jsonix is a JavaScript library which allows you to convert between XML
- * and JavaScript object structures.
- *
- * Copyright (c) 2010 - 2014, Alexey Valikov, Highsource.org
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Alexey Valikov nor the
- *       names of contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL ALEXEY VALIKOV BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
 Jsonix.XML.Input = Jsonix.Class({
 	root : null,
 	node : null,
 	attributes : null,
 	eventType : null,
+	pns : null,
 	initialize : function(node) {
 		Jsonix.Util.Ensure.ensureExists(node);
 		this.root = node;
+		var rootPnsItem =
+		{
+			'' : ''
+		};
+		rootPnsItem[Jsonix.XML.XMLNS_P] = Jsonix.XML.XMLNS_NS;
+		this.pns = [rootPnsItem];
 	},
 	hasNext : function() {
 		// No current node, we've not started yet
@@ -95,6 +72,7 @@ Jsonix.XML.Input = Jsonix.Class({
 		if (nodeType === 1) {
 			// START_ELEMENT
 			this.eventType = 1;
+			this.pushNS(node);
 			return this.eventType;
 		} else if (nodeType === 2) {
 			// ATTRIBUTE
@@ -170,6 +148,7 @@ Jsonix.XML.Input = Jsonix.Class({
 				this.attributes = null;
 				// END_ELEMENT
 				this.eventType = 2;
+				this.popNS();
 				return this.eventType;
 			}
 		}
@@ -223,8 +202,19 @@ Jsonix.XML.Input = Jsonix.Class({
 			throw new Error('Expected start or end tag.');
 		}
 		return et;
-
 	},
+	skipElement : function() {
+		if (this.eventType !== Jsonix.XML.Input.START_ELEMENT) {
+			throw new Error("Parser must be on START_ELEMENT to skip element.");
+		}
+		var numberOfOpenTags = 1;
+		var et;
+		do {
+			et = this.nextTag();
+		    numberOfOpenTags += (et === Jsonix.XML.Input.START_ELEMENT) ? 1 : -1;
+		  } while (numberOfOpenTags > 0);
+		return et;
+	},	
 	getElementText : function() {
 		if (this.eventType != 1) {
 			throw new Error("Parser must be on START_ELEMENT to read next text.");
@@ -251,67 +241,18 @@ Jsonix.XML.Input = Jsonix.Class({
 		}
 		return content;
 	},
-	getAttributeCount : function() {
-		var attributes;
-		if (this.attributes) {
-			attributes = this.attributes;
-		} else if (this.eventType === 1) {
-			attributes = this.node.attributes;
-			this.attributes = attributes;
+	retrieveElement : function () {
+		var element;
+		if (this.eventType === 1) {
+			element = this.node;
 		} else if (this.eventType === 10) {
-			attributes = this.node.parentNode.attributes;
-			this.attributes = attributes;
+			element = this.node.parentNode;
 		} else {
-			throw new Error("Number of attributes can only be retrieved for START_ELEMENT or ATTRIBUTE.");
+			throw new Error("Element can only be retrieved for START_ELEMENT or ATTRIBUTE nodes.");
 		}
-		return attributes.length;
+		return element;
 	},
-	getAttributeName : function(index) {
-		var attributes;
-		if (this.attributes) {
-			attributes = this.attributes;
-		} else if (this.eventType === 1) {
-			attributes = this.node.attributes;
-			this.attributes = attributes;
-		} else if (this.eventType === 10) {
-			attributes = this.node.parentNode.attributes;
-			this.attributes = attributes;
-		} else {
-			throw new Error("Attribute name can only be retrieved for START_ELEMENT or ATTRIBUTE.");
-		}
-		if (index < 0 || index >= attributes.length) {
-			throw new Error("Invalid attribute index [" + index + "].");
-		}
-		var attribute = attributes[index];
-		
-		
-		if (Jsonix.Util.Type.isString(attribute.namespaceURI)) {
-			return new Jsonix.XML.QName(attribute.namespaceURI, attribute.nodeName);
-		} else {
-			return new Jsonix.XML.QName(attribute.nodeName);
-		}
-	},
-	getAttributeNameKey : function(index) {
-		var attributes;
-		if (this.attributes) {
-			attributes = this.attributes;
-		} else if (this.eventType === 1) {
-			attributes = this.node.attributes;
-			this.attributes = attributes;
-		} else if (this.eventType === 10) {
-			attributes = this.node.parentNode.attributes;
-			this.attributes = attributes;
-		} else {
-			throw new Error("Attribute name key can only be retrieved for START_ELEMENT or ATTRIBUTE.");
-		}
-		if (index < 0 || index >= attributes.length) {
-			throw new Error("Invalid attribute index [" + index + "].");
-		}
-		var attribute = attributes[index];
-
-		return Jsonix.XML.QName.key(attribute.namespaceURI, attribute.nodeName);
-	},
-	getAttributeValue : function(index) {
+	retrieveAttributes : function () {
 		var attributes;
 		if (this.attributes)
 		{
@@ -323,13 +264,78 @@ Jsonix.XML.Input = Jsonix.Class({
 			attributes = this.node.parentNode.attributes;
 			this.attributes = attributes;
 		} else {
-			throw new Error("Attribute value can only be retrieved for START_ELEMENT or ATTRIBUTE.");
+			throw new Error("Attributes can only be retrieved for START_ELEMENT or ATTRIBUTE nodes.");
 		}
+		return attributes;
+	},
+	getAttributeCount : function() {
+		var attributes = this.retrieveAttributes();
+		return attributes.length;
+	},
+	getAttributeName : function(index) {
+		var attributes = this.retrieveAttributes();
+		if (index < 0 || index >= attributes.length) {
+			throw new Error("Invalid attribute index [" + index + "].");
+		}
+		var attribute = attributes[index];
+		if (Jsonix.Util.Type.isString(attribute.namespaceURI)) {
+			return new Jsonix.XML.QName(attribute.namespaceURI, attribute.nodeName);
+		} else {
+			return new Jsonix.XML.QName(attribute.nodeName);
+		}
+	},
+	getAttributeNameKey : function(index) {
+		var attributes = this.retrieveAttributes();
+		if (index < 0 || index >= attributes.length) {
+			throw new Error("Invalid attribute index [" + index + "].");
+		}
+		var attribute = attributes[index];
+
+		return Jsonix.XML.QName.key(attribute.namespaceURI, attribute.nodeName);
+	},
+	getAttributeValue : function(index) {
+		var attributes = this.retrieveAttributes();
 		if (index < 0 || index >= attributes.length) {
 			throw new Error("Invalid attribute index [" + index + "].");
 		}
 		var attribute = attributes[index];
 		return attribute.value;
+	},
+	getAttributeValueNS : null,
+	getAttributeValueNSViaElement : function(namespaceURI, localPart) {
+		var element = this.retrieveElement();
+		return element.getAttributeNS(namespaceURI, localPart);
+	},
+	getAttributeValueNSViaAttribute : function(namespaceURI, localPart) {
+		var attributeNode = this.getAttributeNodeNS(namespaceURI, localPart);
+		if (Jsonix.Util.Type.exists(attributeNode)) {
+			return attributeNode.nodeValue;
+		}
+		else
+		{
+			return null;
+		}
+	},
+	getAttributeNodeNS : null,
+	getAttributeNodeNSViaElement : function(namespaceURI, localPart) {
+		var element = this.retrieveElement();
+		return element.getAttributeNodeNS(namespaceURI, localPart);
+	},
+	getAttributeNodeNSViaAttributes : function(namespaceURI, localPart) {
+		var attributeNode = null;
+		var attributes = this.retrieveAttributes();
+		var potentialNode, fullName;
+		for (var i = 0, len = attributes.length; i < len; ++i) {
+			potentialNode = attributes[i];
+			if (potentialNode.namespaceURI === namespaceURI) {
+				fullName = (potentialNode.prefix) ? (potentialNode.prefix + ':' + localPart) : localPart;
+				if (fullName === potentialNode.nodeName) {
+					attributeNode = potentialNode;
+					break;
+				}
+			}
+		}
+		return attributeNode;
 	},
 	getElement : function() {
 		if (this.eventType === 1 || this.eventType === 2) {
@@ -340,9 +346,69 @@ Jsonix.XML.Input = Jsonix.Class({
 			throw new Error("Parser must be on START_ELEMENT or END_ELEMENT to return current element.");
 		}
 	},
+	pushNS : function (node) {
+		var pindex = this.pns.length - 1;
+		var parentPnsItem = this.pns[pindex];
+		var pnsItem = Jsonix.Util.Type.isObject(parentPnsItem) ? pindex : parentPnsItem;
+		this.pns.push(pnsItem);
+		pindex++;
+		var reference = true;
+		if (node.attributes)
+		{
+			var attributes = node.attributes;
+			var alength = attributes.length;
+			if (alength > 0)
+			{
+				// If given node has attributes
+				for (var aindex = 0; aindex < alength; aindex++)
+				{
+					var attribute = attributes[aindex];
+					var attributeName = attribute.nodeName;
+					var p = null;
+					var ns = null;
+					var isNS = false;
+					if (attributeName === 'xmlns')
+					{
+						p = '';
+						ns = attribute.value;
+						isNS = true;
+					}
+					else if (attributeName.substring(0, 6) === 'xmlns:')
+					{
+						p = attributeName.substring(6);
+						ns = attribute.value;
+						isNS = true;
+					}
+					// Attribute is a namespace declaration
+					if (isNS)
+					{
+						if (reference)
+						{
+							pnsItem = Jsonix.Util.Type.cloneObject(this.pns[pnsItem], {});
+							this.pns[pindex] = pnsItem;
+							reference = false;
+						}
+						pnsItem[p] = ns;
+					}
+				}
+			}
+		}		
+	},
+	popNS : function () {
+		this.pns.pop();
+	},
+	getNamespaceURI : function (p) {
+		var pindex = this.pns.length - 1;
+		var pnsItem = this.pns[pindex];
+		pnsItem = Jsonix.Util.Type.isObject(pnsItem) ? pnsItem : this.pns[pnsItem];
+		return pnsItem[p];
+	},
 	CLASS_NAME : "Jsonix.XML.Input"
 
 });
+
+Jsonix.XML.Input.prototype.getAttributeValueNS = (Jsonix.DOM.isDomImplementationAvailable()) ? Jsonix.XML.Input.prototype.getAttributeValueNSViaElement : Jsonix.XML.Input.prototype.getAttributeValueNSViaAttribute;
+Jsonix.XML.Input.prototype.getAttributeNodeNS = (Jsonix.DOM.isDomImplementationAvailable()) ? Jsonix.XML.Input.prototype.getAttributeNodeNSViaElement : Jsonix.XML.Input.prototype.getAttributeNodeNSViaAttributes;
 
 Jsonix.XML.Input.START_ELEMENT = 1;
 Jsonix.XML.Input.END_ELEMENT = 2;

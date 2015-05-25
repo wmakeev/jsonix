@@ -1,13 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<artifactId>jsonix-demos-wms</artifactId>
+	<artifactId>jsonix-demo-wms</artifactId>
 	<packaging>war</packaging>
 	<name>Jsonix Demo [wms]</name>
 	<parent>
 		<groupId>org.hisrc.jsonix</groupId>
 		<artifactId>jsonix-demos</artifactId>
-		<version>2.0.11-SNAPHSHOT</version>
-		<relativePath>../pom.xml</relativePath>
+		<version>2.1.1-SNAPSHOT</version>
 	</parent>
 	<dependencies>
 		<dependency>
@@ -44,7 +43,6 @@
 								<plugin>
 									<groupId>org.hisrc.jsonix</groupId>
 									<artifactId>jsonix-schema-compiler</artifactId>
-									<version>${project.version}</version>
 								</plugin>
 							</plugins>
 						</configuration>
@@ -84,10 +82,10 @@
 						<id>move-generated-sources</id>
 						<phase>process-sources</phase>
 						<configuration>
-							<tasks>
+							<target>
 								<copy file="${project.build.directory}/generated-sources/xjc/WMS_V_1_3_0.js" tofile="${basedir}/src/main/webapp/js/WMS_V_1_3_0.js" />
 								<delete dir="${project.build.directory}/generated-sources" />
-							</tasks>
+							</target>
 						</configuration>
 						<goals>
 							<goal>run</goal>
